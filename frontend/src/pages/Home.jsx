@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
+import Navbar from '../components/Navbar'
 import './pages.css'
 
 function Home() {
@@ -68,30 +69,7 @@ function Home() {
   return (
     <div>
 
-      <header className="navbar">
-
-        <Link to="/" className="logo">
-          🌾 AgroShare
-        </Link>
-
-        <nav>
-          <Link to="/">Home</Link>
-          <Link to="/equipment">Equipment</Link>
-          <Link to="/bookings">Bookings</Link>
-          <Link to="/dashboard">Dashboard</Link>
-        </nav>
-
-        <div className="nav-buttons">
-          <Link to="/login" className="login-btn">
-            Login
-          </Link>
-
-          <Link to="/register" className="register-btn">
-            Register
-          </Link>
-        </div>
-
-      </header>
+      <Navbar />
 
 
       {/* HERO SECTION */}
@@ -442,9 +420,9 @@ function Home() {
                   </p>
 
                   <p>
-                    <p>
-                      <strong>Price:</strong> ₹{equipment.pricePerDay}/day
-                    </p>
+
+                    <strong>Price:</strong> ₹{equipment.pricePerDay}/day
+
                   </p>
 
                   <p>

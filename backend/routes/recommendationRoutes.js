@@ -1,18 +1,10 @@
-
 const express = require("express");
 const router = express.Router();
 
 const Equipment = require("../models/Equipment");
 
-
-// =====================================================
-// GET EQUIPMENT RECOMMENDATIONS
-// =====================================================
-
 router.post("/", async (req, res) => {
-
     try {
-
         const {
             crop,
             landSize,
@@ -20,7 +12,6 @@ router.post("/", async (req, res) => {
             location,
             budget
         } = req.body;
-
 
         // Validate required fields
         if (
@@ -30,66 +21,57 @@ router.post("/", async (req, res) => {
             !location ||
             !budget
         ) {
-
             return res.status(400).json({
                 message: "All recommendation fields are required"
             });
-
         }
-
 
         const budgetNumber = Number(budget);
 
-
         if (isNaN(budgetNumber) || budgetNumber <= 0) {
-
             return res.status(400).json({
                 message: "Budget must be a valid positive number"
             });
-
         }
 
+        // Map Decision Support types to actual equipment types
+        const typeMap = {
+            Tractor: ["Tractor"],
+            Harvester: ["Harvester"],
+            Tillage: ["Tillage", "Tillage Equipment", "Rotavator"],
+            Irrigation: ["Irrigation", "Irrigation Equipment"]
+        };
 
-        // =====================================================
-        // FIND AVAILABLE EQUIPMENT
-        // =====================================================
+        const matchingTypes = typeMap[equipmentType] || [equipmentType];
 
+        // Find available equipment within budget
         const equipment = await Equipment.find({
-
             availability: true,
 
             type: {
-                $regex: `^${equipmentType}$`,
-                $options: "i"
+                $in: matchingTypes.map(
+                    type => new RegExp(`^${type}$`, "i")
+                )
             },
 
             pricePerDay: {
                 $lte: budgetNumber
             }
-
         });
 
-
-        // =====================================================
-        // RANK EQUIPMENT
-        // =====================================================
-
+        // Rank equipment
         const rankedEquipment = equipment.map((item) => {
 
             let score = 0;
 
-
-            // Location match
+            // Exact location match
             if (
                 item.location &&
                 item.location.toLowerCase() ===
                 location.toLowerCase()
             ) {
-
                 score += 3;
-
             }
-
 
             // Partial location match
             else if (
@@ -104,27 +86,19 @@ router.post("/", async (req, res) => {
                         .includes(item.location.toLowerCase())
                 )
             ) {
-
                 score += 2;
-
             }
 
-
-            // Lower price gets a small advantage
+            // Within budget
             if (item.pricePerDay <= budgetNumber) {
-
                 score += 1;
-
             }
-
 
             return {
                 ...item.toObject(),
                 recommendationScore: score
             };
-
         });
-
 
         // Highest score first
         rankedEquipment.sort(
@@ -133,9 +107,7 @@ router.post("/", async (req, res) => {
                 a.recommendationScore
         );
 
-
         res.json({
-
             message: "Recommendations generated successfully",
 
             searchCriteria: {
@@ -147,29 +119,17 @@ router.post("/", async (req, res) => {
             },
 
             recommendations: rankedEquipment
-
         });
-
 
     } catch (error) {
 
-        console.error(
-            "Recommendation error:",
-            error
-        );
-
+        console.error("Recommendation error:", error);
 
         res.status(500).json({
-
             message: "Failed to generate recommendations",
-
             error: error.message
-
         });
-
     }
-
 });
-
 
 module.exports = router;

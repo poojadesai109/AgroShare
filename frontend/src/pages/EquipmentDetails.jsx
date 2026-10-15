@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
+import DatePicker from 'react-datepicker'
+import 'react-datepicker/dist/react-datepicker.css'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import Navbar from '../components/Navbar'
 import './pages.css'
 
 function EquipmentDetails() {
@@ -11,10 +14,15 @@ function EquipmentDetails() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
 
+    // New states for availability
+    const [bookedDates, setBookedDates] = useState([])
+    const [selectedDate, setSelectedDate] = useState(null)
+
     useEffect(() => {
         fetchEquipment()
     }, [id])
 
+    // Fetch equipment details
     const fetchEquipment = async () => {
 
         try {
@@ -40,6 +48,19 @@ function EquipmentDetails() {
 
             setEquipment(selectedEquipment)
 
+            // Fetch booked dates for this equipment
+            const bookingResponse = await fetch(
+                `http://localhost:5000/api/bookings/equipment/${id}`
+            )
+
+            if (bookingResponse.ok) {
+
+                const dates = await bookingResponse.json()
+
+                setBookedDates(dates)
+
+            }
+
         } catch (error) {
 
             console.error('Equipment details error:', error)
@@ -50,6 +71,16 @@ function EquipmentDetails() {
             setLoading(false)
 
         }
+    }
+    const isDateBooked = (date) => {
+
+        const formattedDate = date.toLocaleDateString('en-GB', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        })
+
+        return bookedDates.includes(formattedDate)
     }
 
     const handleBooking = async () => {
@@ -62,11 +93,22 @@ function EquipmentDetails() {
             return
         }
 
-        const date = prompt(
-            `Enter booking date for ${equipment.name} (Example: 15 September 2026)`
-        )
+        if (!selectedDate) {
+            alert('Please select a booking date.')
+            return
+        }
+        const selectedDateText = selectedDate.toLocaleDateString('en-GB', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        })
 
-        if (!date) {
+        if (bookedDates.includes(selectedDateText)) {
+
+            alert(
+                `This equipment is already booked on ${selectedDateText}. Please select another date.`
+            )
+
             return
         }
 
@@ -86,7 +128,7 @@ function EquipmentDetails() {
                         farmerName: user.name,
                         owner: equipment.owner,
                         location: equipment.location,
-                        date: date,
+                        date: selectedDateText,
                         pricePerDay: equipment.pricePerDay
                     })
                 }
@@ -119,20 +161,7 @@ function EquipmentDetails() {
         return (
             <div>
 
-                <header className="navbar">
-
-                    <Link to="/" className="logo">
-                        🌾 AgroShare
-                    </Link>
-
-                    <nav>
-                        <Link to="/">Home</Link>
-                        <Link to="/equipment">Equipment</Link>
-                        <Link to="/bookings">Bookings</Link>
-                        <Link to="/dashboard">Dashboard</Link>
-                    </nav>
-
-                </header>
+                <Navbar />
 
                 <section className="page-header">
                     <h1>{error}</h1>
@@ -149,32 +178,8 @@ function EquipmentDetails() {
     return (
         <div>
 
-            <header className="navbar">
+           <Navbar />
 
-                <Link to="/" className="logo">
-                    🌾 AgroShare
-                </Link>
-
-                <nav>
-                    <Link to="/">Home</Link>
-                    <Link to="/equipment">Equipment</Link>
-                    <Link to="/bookings">Bookings</Link>
-                    <Link to="/dashboard">Dashboard</Link>
-                </nav>
-
-                <div className="nav-buttons">
-
-                    <Link to="/login" className="login-btn">
-                        Login
-                    </Link>
-
-                    <Link to="/register" className="register-btn">
-                        Register
-                    </Link>
-
-                </div>
-
-            </header>
 
             <section className="page-header">
 
@@ -188,10 +193,23 @@ function EquipmentDetails() {
 
             <section className="equipment-page">
 
-                <div className="equipment-item">
+                <div className="equipment-item equipment-details-card">
 
-                    <div className="equipment-item-icon">
-                        🚜
+                    <div className="equipment-details-icon">
+                        {equipment.imageUrl ? (
+                            <img
+                                src={equipment.imageUrl}
+                                alt={equipment.name}
+                                style={{
+                                    width: '100%',
+                                    height: '400px',
+                                    objectFit: 'contain',
+                                    borderRadius: '12px'
+                                }}
+                            />
+                        ) : (
+                            <span style={{ fontSize: '90px' }}>🚜</span>
+                        )}
                     </div>
 
                     <h2>{equipment.name}</h2>
@@ -214,7 +232,9 @@ function EquipmentDetails() {
 
                     <p>
                         <strong>Availability:</strong>{' '}
-                        {equipment.availability ? 'Available' : 'Not Available'}
+                        {equipment.availability
+                            ? 'Available'
+                            : 'Not Available'}
                     </p>
 
                     {equipment.description && (
@@ -225,21 +245,77 @@ function EquipmentDetails() {
                     )}
 
                     {equipment.availability ? (
-                        <button
-                            className="book-button"
-                            onClick={handleBooking}
-                        >
-                            Book Equipment
-                        </button>
+
+                        <div className="booking-panel">
+
+                            <label>
+                                <strong>Select Booking Date:</strong>
+                            </label>
+
+                            <br />
+
+                            <DatePicker
+                                selected={selectedDate}
+                                onChange={(date) => setSelectedDate(date)}
+                                filterDate={(date) => !isDateBooked(date)}
+                                minDate={new Date()}
+                                placeholderText="Select booking date"
+                                dateFormat="dd MMMM yyyy"
+                                className="booking-date-picker"
+                            />
+
+                            <div className="booked-dates-section">
+
+                                <h3>Already Booked Dates</h3>
+
+                                {bookedDates.length === 0 ? (
+
+                                    <p className="no-booked-dates">
+                                        No bookings yet. All dates are available.
+                                    </p>
+
+                                ) : (
+
+                                    <div className="booked-dates-list">
+
+                                        {bookedDates.map((date, index) => (
+
+                                            <span
+                                                className="booked-date"
+                                                key={index}
+                                            >
+                                                {date}
+                                            </span>
+
+                                        ))}
+
+                                    </div>
+
+                                )}
+
+                            </div>
+
+                            <button
+                                className="book-button"
+                                onClick={handleBooking}
+                                style={{ marginTop: '10px' }}
+                            >
+                                Book Equipment
+                            </button>
+
+                        </div>
+
                     ) : (
+
                         <p>
                             This equipment is currently unavailable.
                         </p>
+
                     )}
 
                     <br />
 
-                    <Link to="/equipment">
+                    <Link to="/equipment" className="equipment-details-back">
                         ← Back to Equipment
                     </Link>
 

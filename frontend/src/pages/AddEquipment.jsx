@@ -81,13 +81,20 @@ function AddEquipment() {
         formData.append('image', image)
       }
 
+
+      const token = localStorage.getItem('token')
+
       const response = await fetch(
         'http://localhost:5000/api/equipment',
         {
           method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`
+          },
           body: formData
         }
       )
+
 
       const data = await response.json()
 
@@ -177,6 +184,7 @@ function AddEquipment() {
               <option value="Rotavator">
                 Rotavator
               </option>
+              <option value="Tillage Equipment">Tillage Equipment</option>
 
               <option value="Irrigation Equipment">
                 Irrigation Equipment

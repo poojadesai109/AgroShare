@@ -41,19 +41,28 @@ function Login() {
       // Store logged-in user information
       localStorage.setItem('user', JSON.stringify(data.user))
 
+      // Store JWT token for authenticated API requests
+      if (data.token) {
+        localStorage.setItem('token', data.token)
+      }
+
       setMessage('Login successful!')
 
-      // Go to dashboard
-      navigate('/dashboard')
+      // Redirect according to the user's role
+      if (data.user.role === 'admin') {
+        navigate('/admin')
+      } else {
+        navigate('/dashboard')
+      }
 
     } catch (error) {
 
       console.error('Login error:', error)
       setMessage('Unable to connect to the server')
 
+    } finally {
+      setLoading(false)
     }
-
-    setLoading(false)
   }
 
   return (
