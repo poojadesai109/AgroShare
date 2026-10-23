@@ -45,6 +45,20 @@ function Equipment() {
     }
   }
 
+  // Open the equipment's saved location in Google Maps
+  const openEquipmentLocation = (location) => {
+    const place = String(location || '').trim()
+
+    if (!place) {
+      alert('The owner has not provided an equipment location.')
+      return
+    }
+
+    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place)}`
+
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
+
   const handleSearch = () => {
     const search = searchText.toLowerCase().trim()
 
@@ -232,6 +246,15 @@ function Equipment() {
               <p>
                 <strong>Location:</strong> {item.location}
               </p>
+
+              {/* NEW: View equipment location in Google Maps */}
+              <button
+                type="button"
+                onClick={() => openEquipmentLocation(item.location)}
+                className="card-btn"
+              >
+                📍 View Location in Google Maps
+              </button>
 
               <p>
                 <strong>Owner:</strong> {item.owner}

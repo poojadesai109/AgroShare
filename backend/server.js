@@ -14,6 +14,7 @@ const jwt = require('jsonwebtoken')
 const { requireAuth, requireAdmin } = require('./middleware/auth')
 
 const app = express();
+const reviewRoutes = require("./routes/reviewRoutes");
 const upload = multer({
     storage: multer.memoryStorage(),
     limits: {
@@ -22,10 +23,25 @@ const upload = multer({
 });
 const PORT = 5000;
 
-app.use(cors());
-app.use(express.json());
-app.use("/api/recommendations", recommendationRoutes);
+const corsOptions = {
+    origin: [
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:5174"
+    ],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+};
 
+// CORS must come before every API route
+app.use(cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
+
+app.use(express.json());
+
+app.use("/api/reviews", reviewRoutes);
+app.use("/api/recommendations", recommendationRoutes);
 // =====================================================
 // HOME
 // =====================================================
